@@ -6,3 +6,5 @@
 void* mymalloc(int size);
 
 void myfree(void* ptr);
+
+static char myblock[4096];
