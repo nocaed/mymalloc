@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #endif
-
+typedef enum {false, true} bool;
 void* mymalloc(int size);
 
 void myfree(void* ptr);

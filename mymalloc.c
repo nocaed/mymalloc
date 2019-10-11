@@ -2,6 +2,9 @@
 
 // This main method is just for testing purposes, the final product should not have it
 int main(int argc, char** argv) {
+    if(true) {
+        printf("bool works lol\n");
+    }
     if(argc < 3) {
         printf("Not enough arguments: Format it like so:\n");
         printf("<executable-name> <command> <number>");
@@ -28,5 +31,5 @@ int main(int argc, char** argv) {
 }
 
 void* mymalloc(int size) {
-    
+
 }
