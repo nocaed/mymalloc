@@ -1,8 +1,22 @@
 #include "mymalloc.h"
 /**
  * IMPORTANT INFO
+ * Spaghetti ahead
+ * 
  * Size of the metadata is 16 bytes
  * Definitions in mymalloc.h not working
+ * 
+ * I have a lot of print statements throughout for debugging, please do not delete unless you 
+ * really hate them
+ * 
+ * Right now what I think should happen next is the process by which a new piece of metadata is
+ * created after space is found for the user.
+ * 
+ * I made a system to test this so you don't just have to hardcode malloc or free in main.
+ * Basically run the program like this:
+ * ./a.out m 2
+ * the 2 can be any number, all that matters is that it's a number
+ * 
  */
 // This main method is just for testing purposes, the final product should not have it
 int main(int argc, char** argv) {
@@ -34,22 +48,22 @@ int main(int argc, char** argv) {
 
 void* mymalloc(int size) {
     
-    if(isFirstCall()) {
+    if(isFirstCall()) { 
         printf("it's the first call\n");
-        metadata firstMetadata = {0x0404, 0, 4080, NULL};
+        metadata firstMetadata = {0x0404, 0, 4080, NULL}; // 0x0404 is just the code i chose to verify it.
         metadata* ptrFirstMetadata = (metadata*) myblock;
-        *ptrFirstMetadata = firstMetadata;
+        *ptrFirstMetadata = firstMetadata; // setting first blocks to the meta data block
 
     } else {
-        printf("it's been called before\n");
+        printf("it's been called before\n"); // debugging message
     }
-    metadata* metaPtr = (metadata*) myblock;
-    void* resultPtr = NULL;
-    bool foundSpace = false;
-    while(foundSpace || metaPtr == NULL) {
+    metadata* metaPtr = (metadata*) myblock; // start it at the first meta data block
+    void* resultPtr = NULL; // the pointer we will return at the end of the function
+    bool foundSpace = false; // did we find enough space for the user? This boolean shows it.
+    while(!foundSpace && metaPtr != NULL) { // we end if we either reach the end of the block or find enough memory
         if(!(metaPtr->inUse)) {
             printf("it not in use");
-            if(size >= size + sizeof(metadata)) {
+            if(metaPtr->size >= size + sizeof(metadata)) {
                 // TODO need to code in case at the end where we don't care about space for metadata
                 resultPtr = (void*) (metaPtr + 1);
                 foundSpace = true;
@@ -59,12 +73,15 @@ void* mymalloc(int size) {
     }
 
     // make new metadata piece
-    
+    if(foundSpace) {
+        // new metadata should be at resultPtr + size + 1 i think?
+
+    }
 
 
 }
 
-bool isFirstCall() {
+bool isFirstCall() { // i dont know why i used bitwise operators but i really did not need to
     unsigned short firstByte = (short) 0 | ((char) myblock[0]);
     unsigned short secondByte = 0 | myblock[1];
     unsigned short firstTwoBytes = 0 | firstByte;

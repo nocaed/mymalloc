@@ -10,7 +10,7 @@ typedef struct _meta {
     short tag;
     char inUse;
     short size;
-    char* next; // maybe void*?
+    struct _meta* next; // maybe void*?
 
 } metadata;
 void* mymalloc(int size);
