@@ -5,8 +5,18 @@
 #include <stdio.h>
 #endif
 typedef enum {false, true} bool;
+
+typedef struct _meta {
+    short tag;
+    char inUse;
+    short size;
+    char* next; // maybe void*?
+
+} metadata;
 void* mymalloc(int size);
 
 void myfree(void* ptr);
+
+bool isFirstCall();
 
 static char myblock[4096];
