@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 
 }
 
-void* mymalloc(int size) {
+void* mymalloc(size_t size) {
     
     if(isFirstCall()) { 
         printf("it's the first call\n");

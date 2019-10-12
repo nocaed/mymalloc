@@ -1,8 +1,9 @@
 #ifndef _HEADER_H
-//#define malloc(x) mymalloc(x, __FILE__, __LINE__)
-//#define free(x) myfree(x, __FILE__, __LINE__)
 #include <stdlib.h>
 #include <stdio.h>
+#define malloc(x) mymalloc(x, __FILE__, __LINE__)
+#define free(x) myfree(x, __FILE__, __LINE__)
+
 #endif
 typedef enum {false, true} bool;
 
@@ -13,7 +14,7 @@ typedef struct _meta {
     struct _meta* next; // maybe void*?
 
 } metadata;
-void* mymalloc(int size);
+void* mymalloc(size_t size);
 
 void myfree(void* ptr);
 
