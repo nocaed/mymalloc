@@ -9,8 +9,7 @@
  * I have a lot of print statements throughout for debugging, please do not delete unless you 
  * really hate them
  * 
- * Right now what I think should happen next is the process by which a new piece of metadata is
- * created after space is found for the user.
+ * Right now all we can do is add metadata and allocate it
  * 
  * I made a system to test this so you don't just have to hardcode malloc or free in main.
  * Basically run the program like this:
@@ -67,6 +66,9 @@ void* mymalloc(size_t size) {
                 // TODO need to code in case at the end where we don't care about space for metadata
                 resultPtr = (void*) (metaPtr + 1);
                 foundSpace = true;
+                metaPtr->size = size;
+                metaPtr->next = resultPtr + size;
+                metaPtr->inUse = 1;
             }
         }
         metaPtr = metaPtr->next;
@@ -74,10 +76,16 @@ void* mymalloc(size_t size) {
 
     // make new metadata piece
     if(foundSpace) {
-        // new metadata should be at resultPtr + size + 1 i think?
-
+        // new metadata should be at resultPtr + size i think?
+        // This is making a new metadata piece if it's at the end and there are no metadatas after it
+        // 
+        metadata* newMetaPtr = resultPtr + size; // could cause an error if it's adding size * sizeof(metadata)
+        short sizeLeft = (myblock + 4095) - (((char*) newMetaPtr) + 15);
+        metadata newMeta = {0x0404, 0, sizeLeft, NULL};
+        *newMetaPtr = newMeta;
+        printf("Made new metadata\n");
     }
-
+    return resultPtr;
 
 }
 
