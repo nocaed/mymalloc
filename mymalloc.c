@@ -38,7 +38,6 @@ int main(int argc, char** argv) {
         switch(command){
             case 'm':
                 mymalloc(number);
-                mymalloc(number + 1);
                 break;
             case 'f':
                 // find some way to save pointers lol
@@ -51,7 +50,7 @@ int main(int argc, char** argv) {
                 printf("why the fuck would you type %c you idiot\n", command);
             
         }
-        printf("you gotta type q and a number to quit");
+        printf("you gotta type q and a number to quit\n");
         printf("type command and number: ");
         scanf("%c %d", &command, &number);
     }while(command != 'q');
@@ -76,7 +75,7 @@ void* mymalloc(size_t size) {
     int distanceBtwnMetas;
     while(!foundSpace && metaPtr != NULL) { // we end if we either reach the end of the block or find enough memory
         if(!(metaPtr->inUse)) {
-            printf("it not in use");
+//            printf("it not in use");
             if(metaPtr->size >= size + metadataSize) { // if the metadata shows space that is big enough for the size
                                                             // and what the user allocated...
                 // TODO need to code in case at the end where we don't care about space for metadata
@@ -114,7 +113,7 @@ void* mymalloc(size_t size) {
         }
         
         *newMetaPtr = newMeta;
-        printf("Made new metadata\n");
+ //       printf("Made new metadata\n");
     }
     return resultPtr;
 
@@ -125,7 +124,7 @@ bool isFirstCall() { // i dont know why i used bitwise operators but i really di
     unsigned short secondByte = 0 | myblock[1];
     unsigned short firstTwoBytes = 0 | firstByte;
     firstTwoBytes = firstByte | (secondByte << 8);
-    printf("the first 2bytes make %d\n", firstTwoBytes);
+    // printf("the first 2bytes make %d\n", firstTwoBytes);
     return !(firstTwoBytes == 0x0404);
 }
 
@@ -151,4 +150,35 @@ void myfree(void* ptr)
 void resetMetadata(metadata* ptr)
 {
     ptr -> inUse = 0;
+}
+
+/*
+ * 
+ * I HAVE NOT TESTED THIS
+ */
+void collapse() {
+    // start at beginning of block of memory
+    metadata* metaPtr = (metadata*) myblock;
+    
+    while(metaPtr != NULL) {
+        if(metaPtr->next == NULL) { // if we're at the end, stop
+            break;
+        }
+        metadata* nextMetaPtr = metaPtr->next;
+
+        if(!(metaPtr->inUse) && !(nextMetaPtr->inUse)) { // if current and next are both not in use
+            // then we can merge
+            // what does merging consist of?
+            // 1. set tag in deleted metadata to 0
+            nextMetaPtr->tag = 0;
+            // 2. metaptr->next = nextMetaPtr->next
+            metaPtr->next = nextMetaPtr->next;
+            // 3. metaptr->size is now the old size + nextMetaPtr->size + metadataSize
+            metaPtr->size = metaPtr->size + nextMetaPtr->size + metadataSize;
+
+        }
+        // advance metadata ptr
+        metaPtr = metaPtr->next;
+
+    }
 }

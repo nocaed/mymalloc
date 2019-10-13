@@ -23,3 +23,5 @@ bool isFirstCall();
 static char myblock[4096];
 
 void resetMetadata(metadata* ptr);
+
+void collapse();
