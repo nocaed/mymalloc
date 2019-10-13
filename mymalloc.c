@@ -21,6 +21,8 @@
  * 
  */
 // This main method is just for testing purposes, the final product should not have it
+const short metadataSize = sizeof(metadata); // holds the size of metadata
+
 int main(int argc, char** argv) {
     if(argc < 3) {
         printf("Not enough arguments: Format it like so:\n");
@@ -67,7 +69,7 @@ void* mymalloc(size_t size) {
     while(!foundSpace && metaPtr != NULL) { // we end if we either reach the end of the block or find enough memory
         if(!(metaPtr->inUse)) {
             printf("it not in use");
-            if(metaPtr->size >= size + sizeof(metadata)) { // if the metadata shows space that is big enough for the size
+            if(metaPtr->size >= size + metadataSize) { // if the metadata shows space that is big enough for the size
                                                             // and what the user allocated...
                 // TODO need to code in case at the end where we don't care about space for metadata
                 if((metaPtr->next > (myblock + 4095) )|| metaPtr->next == NULL) { // if this is the last metadata block
@@ -113,4 +115,10 @@ bool isFirstCall() { // i dont know why i used bitwise operators but i really di
     firstTwoBytes = firstByte | (secondByte << 8);
     printf("the first 2bytes make %d\n", firstTwoBytes);
     return !(firstTwoBytes == 0x0404);
+}
+
+void myfree(void* ptr)
+{
+    short metaAddress = ptr - metadataSize; // Stores the address of the metadata for the pointer in metaAddress
+
 }
