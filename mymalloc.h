@@ -21,3 +21,5 @@ void myfree(void* ptr);
 bool isFirstCall();
 
 static char myblock[4096];
+
+void resetMetadata(metadata* ptr);

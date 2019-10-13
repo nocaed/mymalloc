@@ -10,7 +10,7 @@
  * really hate them
  * 
  * Tasks right now
- * - [ ] Start myfree
+ * - [x] Start myfree
  * - [ ] Allow for splitting of chunks 
  * - [ ] Improve testing environment to allow multiple inputs
  * 
@@ -117,8 +117,26 @@ bool isFirstCall() { // i dont know why i used bitwise operators but i really di
     return !(firstTwoBytes == 0x0404);
 }
 
+// frees a pointer from memory
 void myfree(void* ptr)
 {
-    short metaAddress = ptr - metadataSize; // Stores the address of the metadata for the pointer in metaAddress
+    metadata* metaAddress = ptr - metadataSize; // Stores the address of the metadata for the pointer in metaAddress
 
+    // if this is the last metadata in the memory...
+    if(metaAddress -> next == NULL)
+    {
+        // ...reset the metadata to have it not in use
+        resetMetadata(metaAddress);
+    }
+    // collapse stuff
+    else
+    {
+        // TODO: COLLAPSE THIS BAD BITCH
+    }
+}
+
+// resets the state of the metadata to ignore the following block of allocated memory
+void resetMetadata(metadata* ptr)
+{
+    ptr -> inUse = 0;
 }
