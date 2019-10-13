@@ -49,7 +49,10 @@ int main(int argc, char** argv) {
             default:
                 printf("why the fuck would you type %c you idiot\n", command);
             
+            
         }
+        printMeta();
+        printf("\n\n");
         printf("you gotta type q and a number to quit\n");
         printf("type command and number: ");
         scanf("%c %d", &command, &number);
@@ -159,7 +162,7 @@ void resetMetadata(metadata* ptr)
 void collapse() {
     // start at beginning of block of memory
     metadata* metaPtr = (metadata*) myblock;
-    
+
     while(metaPtr != NULL) {
         if(metaPtr->next == NULL) { // if we're at the end, stop
             break;
@@ -180,5 +183,24 @@ void collapse() {
         // advance metadata ptr
         metaPtr = metaPtr->next;
 
+    }
+}
+
+void printMeta() {
+    metadata* metaPtr = (metadata*) myblock;
+    int counter = 0;
+    while(metaPtr != NULL) {
+        printf("Metadata num: %d at address %p\n", counter, metaPtr);
+        printf("In use: ");
+        if(metaPtr->inUse) {
+            printf("Yes\n");
+        } else {
+            printf("No\n");
+        }
+        printf("Size: %d\n", metaPtr->size);
+        printf("Next: %p\n", metaPtr->next);
+        printf("------------------------------------\n");
+        metaPtr = metaPtr->next;
+        counter++;
     }
 }
