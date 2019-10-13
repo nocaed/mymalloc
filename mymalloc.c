@@ -11,7 +11,7 @@
  * 
  * Tasks right now
  * - [x] Start myfree
- * - [ ] Allow for splitting of chunks 
+ * - [x] Allow for splitting of chunks (ok i sort of did it, can't test yet)
  * - [ ] Improve testing environment to allow multiple inputs
  * 
  * I made a system to test this so you don't just have to hardcode malloc or free in main.
@@ -34,20 +34,27 @@ int main(int argc, char** argv) {
     int number;
     // number is the amount of bytes allocated
     sscanf(argv[2], "%d", &number);
-
-    switch(command){
-        case 'm':
-            mymalloc(number);
-            mymalloc(number + 1);
-            break;
-        case 'f':
-            // find some way to save pointers lol
-            break;
-        case 'a':
-            break;
-        default:
-            printf("why the fuck would you type %c you idiot\n", command);
-    }
+    do {
+        switch(command){
+            case 'm':
+                mymalloc(number);
+                mymalloc(number + 1);
+                break;
+            case 'f':
+                // find some way to save pointers lol
+                break;
+            case 'a':
+                break;
+            case 'q':
+                break;
+            default:
+                printf("why the fuck would you type %c you idiot\n", command);
+            
+        }
+        printf("you gotta type q and a number to quit");
+        printf("type command and number: ");
+        scanf("%c %d", &command, &number);
+    }while(command != 'q');
 
 }
 
@@ -65,17 +72,17 @@ void* mymalloc(size_t size) {
     metadata* metaPtr = (metadata*) myblock; // start it at the first meta data block
     void* resultPtr = NULL; // the pointer we will return at the end of the function
     bool foundSpace = false; // did we find enough space for the user? This boolean shows it.
-    bool isSplit = true; // will be true if the allocation causes a split between metadatas
+    bool isSplit = false; // will be true if the allocation causes a split between metadatas
+    int distanceBtwnMetas;
     while(!foundSpace && metaPtr != NULL) { // we end if we either reach the end of the block or find enough memory
         if(!(metaPtr->inUse)) {
             printf("it not in use");
             if(metaPtr->size >= size + metadataSize) { // if the metadata shows space that is big enough for the size
                                                             // and what the user allocated...
                 // TODO need to code in case at the end where we don't care about space for metadata
-                if((metaPtr->next > (myblock + 4095) )|| metaPtr->next == NULL) { // if this is the last metadata block
-                    isSplit = false; // then we don't have to do a split
-                    // NOTE this doesnt account for cases where ->next is pointing to an address like
-                    // 4090, where there isn't enough room for metadata. So maybe it should be < myblock + 4079
+                if(metaPtr->next != NULL) { // if this is not the last metadata block
+                    // if it's not null then we gotta do some shit
+                    isSplit = true;
                 }
                 resultPtr = (void*) (metaPtr + 1); // 
                 foundSpace = true;
@@ -96,9 +103,14 @@ void* mymalloc(size_t size) {
         short sizeLeft = (myblock + 4095) - (((char*) newMetaPtr) + 15);
         metadata newMeta = {0x0404, 0, sizeLeft, NULL};
         if(isSplit) {
+            // WE CAN ASSUME THAT the previous metadata (resultptr - metadatasize) 
+            // will not be null in prev->next
             // i want to do two things here:
             // change sizeLeft so that it is the distance between the result pointer and 
             // make newMeta->next point to the next metadata
+            newMeta.next = metaPtr;
+            newMeta.size = (metaPtr - newMetaPtr - metadataSize);
+            // can't test this until free works LUL
         }
         
         *newMetaPtr = newMeta;
