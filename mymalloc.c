@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     do {
         switch(command){
             case 'm':
-                mymalloc(number);
+                malloc(number);
                 break;
             case 'f':
                 // find some way to save pointers lol
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 
 }
 
-void* mymalloc(size_t size) {
+void* mymalloc(size_t size, char* file, int line) {
     
     if(isFirstCall()) { 
         printf("it's the first call\n");
@@ -132,7 +132,7 @@ bool isFirstCall() { // i dont know why i used bitwise operators but i really di
 }
 
 // frees a pointer from memory
-void myfree(void* ptr)
+void myfree(void* ptr, char* file, int line)
 {
     metadata* metaAddress = ptr - metadataSize; // Stores the address of the metadata for the pointer in metaAddress
 
