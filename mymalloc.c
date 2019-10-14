@@ -31,32 +31,48 @@ int main(int argc, char** argv) {
     }
     // commands will be a single character
     char command = argv[1][0]; // m for malloc, f for free?, a for access? idfk
+    char* ptr1 = malloc(20);
+    printMeta();
+    char* ptr2 = (char*) malloc(4);
+    printMeta();
+    free(ptr1);
+    printMeta();
+    char* ptr3 = malloc(2);
+    printMeta();
     int number;
+    int numPtrsSaved = 0;
+    char* ptrs[100];
     // number is the amount of bytes allocated
     sscanf(argv[2], "%d", &number);
-    do {
-        switch(command){
-            case 'm':
-                malloc(number);
-                break;
-            case 'f':
-                // find some way to save pointers lol
-                break;
-            case 'a':
-                break;
-            case 'q':
-                break;
-            default:
-                printf("why the fuck would you type %c you idiot\n", command);
+    // do {
+    //     int i;
+    //     for(i = 0; i < numPtrsSaved; i++) {
+    //         printf("%d: %p\n", i, ptrs[i]);
+    //     }
+    //     switch(command){
+    //         case 'm':
+    //             ptrs[numPtrsSaved] = (char*) malloc(number);
+    //             numPtrsSaved++;
+    //             break;
+    //         case 'f':
+    //             // find some way to save pointers lol
+
+    //             break;
+    //         case 'a':
+    //             break;
+    //         case 'q':
+    //             break;
+    //         default:
+    //             printf("why the fuck would you type %c you idiot\n", command);
             
             
-        }
-        printMeta();
-        printf("\n\n");
-        printf("you gotta type q and a number to quit\n");
-        printf("type command and number: ");
-        scanf("%c %d", &command, &number);
-    }while(command != 'q');
+    //     }
+    //     printMeta();
+    //     printf("\n\n");
+    //     printf("you gotta type q and a number to quit\n");
+    //     printf("type command and number: ");
+    //     scanf("[^\n]%c %d", &command, &number);
+    // }while(command != 'q');
 
 }
 
@@ -76,6 +92,7 @@ void* mymalloc(size_t size, char* file, int line) {
     bool foundSpace = false; // did we find enough space for the user? This boolean shows it.
     bool isSplit = false; // will be true if the allocation causes a split between metadatas
     int distanceBtwnMetas;
+    metadata* nextPtr;
     while(!foundSpace && metaPtr != NULL) { // we end if we either reach the end of the block or find enough memory
         if(!(metaPtr->inUse)) {
 //            printf("it not in use");
@@ -85,10 +102,12 @@ void* mymalloc(size_t size, char* file, int line) {
                 if(metaPtr->next != NULL) { // if this is not the last metadata block
                     // if it's not null then we gotta do some shit
                     isSplit = true;
+                    nextPtr = metaPtr->next;
                 }
                 resultPtr = (void*) (metaPtr + 1); // 
                 foundSpace = true;
                 metaPtr->size = size;
+                // might need to capture the ->next value before it gets changed if its a split
                 metaPtr->next = resultPtr + size;
                 metaPtr->inUse = 1;
             }
@@ -110,11 +129,11 @@ void* mymalloc(size_t size, char* file, int line) {
             // i want to do two things here:
             // change sizeLeft so that it is the distance between the result pointer and 
             // make newMeta->next point to the next metadata
-            newMeta.next = metaPtr;
-            newMeta.size = (metaPtr - newMetaPtr - metadataSize);
+            newMeta.next = nextPtr;
+            newMeta.size = (((void*) nextPtr) - ((void*)newMetaPtr) - metadataSize);
             // can't test this until free works LUL
         }
-        
+
         *newMetaPtr = newMeta;
  //       printf("Made new metadata\n");
     }
@@ -134,19 +153,10 @@ bool isFirstCall() { // i dont know why i used bitwise operators but i really di
 // frees a pointer from memory
 void myfree(void* ptr, char* file, int line)
 {
+    // need some error checks first
     metadata* metaAddress = ptr - metadataSize; // Stores the address of the metadata for the pointer in metaAddress
-
-    // if this is the last metadata in the memory...
-    if(metaAddress -> next == NULL)
-    {
-        // ...reset the metadata to have it not in use
-        resetMetadata(metaAddress);
-    }
-    // collapse stuff
-    else
-    {
-        // TODO: COLLAPSE THIS BAD BITCH
-    }
+    resetMetadata(metaAddress);
+    collapse();
 }
 
 // resets the state of the metadata to ignore the following block of allocated memory
@@ -178,6 +188,7 @@ void collapse() {
             metaPtr->next = nextMetaPtr->next;
             // 3. metaptr->size is now the old size + nextMetaPtr->size + metadataSize
             metaPtr->size = metaPtr->size + nextMetaPtr->size + metadataSize;
+            continue;
 
         }
         // advance metadata ptr
@@ -203,4 +214,5 @@ void printMeta() {
         metaPtr = metaPtr->next;
         counter++;
     }
+    printf("\n\n");
 }
