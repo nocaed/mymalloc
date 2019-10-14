@@ -26,18 +26,19 @@ static char myblock[4096];
 int main(int argc, char** argv) {
     char* ptr1 = malloc(2);
     printMeta();
-    char* ptr2 = (char*) malloc(3);
+    char* ptr2 = malloc(4062);
     printMeta();
     free(ptr1);
     printMeta();
-    free(ptr2);
+    ptr1 = malloc(2);
+    free(ptr1);
     printMeta();
 
 }
 
 void* mymalloc(size_t size, char* file, int line) {
     
-    if(isMetadata(myblock)) { 
+    if(!isMetadata(myblock)) { 
         printf("it's the first call\n");
         metadata firstMetadata = {0x0404, 0, 4080, NULL}; // 0x0404 is just the code i chose to verify it.
         metadata* ptrFirstMetadata = (metadata*) myblock;
@@ -131,7 +132,7 @@ bool isMetadata(void* address) {
     unsigned short firstTwoBytes = 0 | firstByte;
     firstTwoBytes = firstByte | (secondByte << 8);
     // printf("the first 2bytes make %d\n", firstTwoBytes);
-    return !(firstTwoBytes == 0x0404);
+    return (firstTwoBytes == 0x0404);
 }
 
 // frees a pointer from memory
