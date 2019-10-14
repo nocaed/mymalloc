@@ -22,17 +22,22 @@
  */
 // This main method is just for testing purposes, the final product should not have it
 const short metadataSize = sizeof(metadata); // holds the size of metadata
-
+static char myblock[4096];
 int main(int argc, char** argv) {
-
-    char* ptr1 = malloc(4081);
+    char* ptr1 = malloc(2);
+    printMeta();
+    char* ptr2 = (char*) malloc(3);
+    printMeta();
+    free(ptr1);
+    printMeta();
+    free(ptr2);
     printMeta();
 
 }
 
 void* mymalloc(size_t size, char* file, int line) {
     
-    if(isFirstCall()) { 
+    if(isMetadata(myblock)) { 
         printf("it's the first call\n");
         metadata firstMetadata = {0x0404, 0, 4080, NULL}; // 0x0404 is just the code i chose to verify it.
         metadata* ptrFirstMetadata = (metadata*) myblock;
@@ -102,8 +107,8 @@ void* mymalloc(size_t size, char* file, int line) {
         *newMetaPtr = newMeta;
  //       printf("Made new metadata\n");
     } else {
-        fprintf(stderr, "Error in file: %s at line: %d\n", file, line);
-        fprintf(stderr, "Not enough space to allocate %d bytes\n", size);
+        fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
+        fprintf(stderr, "\tNot enough space to allocate %d bytes\n", size);
         
     }
     return resultPtr;
@@ -119,11 +124,45 @@ bool isFirstCall() { // i dont know why i used bitwise operators but i really di
     return !(firstTwoBytes == 0x0404);
 }
 
+bool isMetadata(void* address) {
+    char* addressChar = (char*) address;
+    unsigned short firstByte = (short) 0 | (*addressChar);
+    unsigned short secondByte = 0 | *(addressChar + 1);
+    unsigned short firstTwoBytes = 0 | firstByte;
+    firstTwoBytes = firstByte | (secondByte << 8);
+    // printf("the first 2bytes make %d\n", firstTwoBytes);
+    return !(firstTwoBytes == 0x0404);
+}
+
 // frees a pointer from memory
 void myfree(void* ptr, char* file, int line) {
-    
+    if(ptr < ((void*) myblock) || ptr >= ((void*)myblock + 4096)) {
+        fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
+        fprintf(stderr, "\tCannot free address: %p\n", ptr);
+        fprintf(stderr, "\tAddress outside of range for myblock\n");
+        return;
+    }
     // need some error checks first
     metadata* metaAddress = ptr - metadataSize; // Stores the address of the metadata for the pointer in metaAddress
+    if((void*)metaAddress < (void*) myblock) {
+        fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
+        fprintf(stderr, "\tCannot free address: %p\n", ptr);
+        fprintf(stderr, "\tMemory was not allocated\n");
+        return;
+    }
+    if(isMetadata(metaAddress)) {
+        if(!(metaAddress->inUse)) {
+            fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
+            fprintf(stderr, "\tCannot free address: %p\n", ptr);
+            fprintf(stderr, "\tMemory was not allocated\n");
+            return;
+        }
+    } else {
+        fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
+        fprintf(stderr, "\tCannot free address: %p\n", ptr);
+        fprintf(stderr, "\tMemory was not allocated\n");
+        return;
+    }
     resetMetadata(metaAddress);
     collapse();
 }
@@ -169,6 +208,7 @@ void collapse() {
 void printMeta() {
     metadata* metaPtr = (metadata*) myblock;
     int counter = 0;
+    printf("------------------------------------\n");
     while(metaPtr != NULL) {
         printf("Metadata num: %d at address %p\n", counter, metaPtr);
         printf("In use: ");

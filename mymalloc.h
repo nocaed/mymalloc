@@ -20,7 +20,7 @@ void myfree(void* ptr, char* file, int line);
 
 bool isFirstCall();
 
-static char myblock[4096];
+bool isMetadata(void* address);
 
 void resetMetadata(metadata* ptr);
 
