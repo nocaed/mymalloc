@@ -26,11 +26,16 @@ void firstTest()
 {
     int i;
 
-    void* ptr;
+    char* ptr;
 
     for(i = 0; i < hundredFifty; i++)
     {
-        //ptr = malloc(1);
-
+        ptr = (char*)malloc(1);
+        free(ptr);
     }
+}
+
+void secondTest()
+{
+    
 }
