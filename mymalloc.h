@@ -14,9 +14,9 @@ typedef struct _meta {
     struct _meta* next; // maybe void*?
 
 } metadata;
-void* mymalloc(size_t size);
+void* mymalloc(size_t size, char* file, int line);
 
-void myfree(void* ptr);
+void myfree(void* ptr, char* file, int line);
 
 bool isFirstCall();
 
