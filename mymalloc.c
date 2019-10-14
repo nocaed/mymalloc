@@ -24,55 +24,9 @@
 const short metadataSize = sizeof(metadata); // holds the size of metadata
 
 int main(int argc, char** argv) {
-    if(argc < 3) {
-        printf("Not enough arguments: Format it like so:\n");
-        printf("<executable-name> <command> <number>\n");
-        return -1;
-    }
-    // commands will be a single character
-    char command = argv[1][0]; // m for malloc, f for free?, a for access? idfk
-    char* ptr1 = malloc(20);
-    printMeta();
-    char* ptr2 = (char*) malloc(4);
-    printMeta();
-    free(ptr1);
-    printMeta();
-    char* ptr3 = malloc(2);
-    printMeta();
-    int number;
-    int numPtrsSaved = 0;
-    char* ptrs[100];
-    // number is the amount of bytes allocated
-    sscanf(argv[2], "%d", &number);
-    // do {
-    //     int i;
-    //     for(i = 0; i < numPtrsSaved; i++) {
-    //         printf("%d: %p\n", i, ptrs[i]);
-    //     }
-    //     switch(command){
-    //         case 'm':
-    //             ptrs[numPtrsSaved] = (char*) malloc(number);
-    //             numPtrsSaved++;
-    //             break;
-    //         case 'f':
-    //             // find some way to save pointers lol
 
-    //             break;
-    //         case 'a':
-    //             break;
-    //         case 'q':
-    //             break;
-    //         default:
-    //             printf("why the fuck would you type %c you idiot\n", command);
-            
-            
-    //     }
-    //     printMeta();
-    //     printf("\n\n");
-    //     printf("you gotta type q and a number to quit\n");
-    //     printf("type command and number: ");
-    //     scanf("[^\n]%c %d", &command, &number);
-    // }while(command != 'q');
+    char* ptr1 = malloc(4081);
+    printMeta();
 
 }
 
@@ -110,7 +64,18 @@ void* mymalloc(size_t size, char* file, int line) {
                 // might need to capture the ->next value before it gets changed if its a split
                 metaPtr->next = resultPtr + size;
                 metaPtr->inUse = 1;
+            } else if(metaPtr->size >= size) { // if you can't make a new metadata, just flip the inUse and return
+                metaPtr->inUse = 1;
+                resultPtr = (void*) (metaPtr + 1);
+                return resultPtr;
             }
+            // This is the case for when you're at the end and have enough space to allocate for the user,
+            // but you do not have enough space to both allocate and make a new metadata
+            // if(metaPtr->next == NULL && metaPtr->size >= size) { // LOL I MIGHT NOT NEED THIS
+            //     metaPtr->inUse = 1;
+            //     resultPtr = (void*) (metaPtr + 1);
+            //     return resultPtr;
+            // }
         }
         metaPtr = metaPtr->next;
     }
@@ -136,6 +101,10 @@ void* mymalloc(size_t size, char* file, int line) {
 
         *newMetaPtr = newMeta;
  //       printf("Made new metadata\n");
+    } else {
+        fprintf(stderr, "Error in file: %s at line: %d\n", file, line);
+        fprintf(stderr, "Not enough space to allocate %d bytes\n", size);
+        
     }
     return resultPtr;
 
@@ -151,8 +120,8 @@ bool isFirstCall() { // i dont know why i used bitwise operators but i really di
 }
 
 // frees a pointer from memory
-void myfree(void* ptr, char* file, int line)
-{
+void myfree(void* ptr, char* file, int line) {
+    
     // need some error checks first
     metadata* metaAddress = ptr - metadataSize; // Stores the address of the metadata for the pointer in metaAddress
     resetMetadata(metaAddress);
