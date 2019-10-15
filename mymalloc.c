@@ -1,29 +1,11 @@
 #include "mymalloc.h"
-/**
- * IMPORTANT INFO
- * Spaghetti ahead
- * 
- * Size of the metadata is 16 bytes
- * Definitions in mymalloc.h working
- * 
- * I have a lot of print statements throughout for debugging, please do not delete unless you 
- * really hate them
- * 
- * Tasks right now
- * - [x] Start myfree
- * - [x] Allow for splitting of chunks (ok i sort of did it, can't test yet)
- * - [ ] Improve testing environment to allow multiple inputs
- * 
- * I made a system to test this so you don't just have to hardcode malloc or free in main.
- * Basically run the program like this:
- * ./a.out m 2
- * the 2 can be any number, all that matters is that it's a number
- * 
- */
-// This main method is just for testing purposes, the final product should not have it
+
 const short metadataSize = sizeof(metadata); // holds the size of metadata
 static char myblock[4096];
-
+/**
+ * Allocates memory in myblock, if there is room. If there is enough room to create
+ * a new metadata block, it creates one.
+ */
 void* mymalloc(size_t size, char* file, int line) {
     
     if(!isMetadata(myblock)) { 
@@ -38,19 +20,17 @@ void* mymalloc(size_t size, char* file, int line) {
     metadata* nextPtr;
     while(!foundSpace && metaPtr != NULL) { // we end if we either reach the end of the block or find enough memory
         if(!(metaPtr->inUse)) {
-//            printf("it not in use");
+
             if(metaPtr->size >= size + metadataSize) { // if the metadata shows space that is big enough for the size
                                                             // and what the user allocated...
-                // TODO need to code in case at the end where we don't care about space for metadata
                 if(metaPtr->next != NULL) { // if this is not the last metadata block
                     // if it's not null then we gotta do some shit
                     isSplit = true;
                     nextPtr = metaPtr->next;
                 }
-                resultPtr = (void*) (metaPtr + 1); // 
+                resultPtr = (void*) (metaPtr + 1);
                 foundSpace = true;
                 metaPtr->size = size;
-                // might need to capture the ->next value before it gets changed if its a split
                 metaPtr->next = resultPtr + size;
                 metaPtr->inUse = 1;
             } else if(metaPtr->size >= size) { // if you can't make a new metadata, just flip the inUse and return
@@ -58,38 +38,27 @@ void* mymalloc(size_t size, char* file, int line) {
                 resultPtr = (void*) (metaPtr + 1);
                 return resultPtr;
             }
-            // This is the case for when you're at the end and have enough space to allocate for the user,
-            // but you do not have enough space to both allocate and make a new metadata
-            // if(metaPtr->next == NULL && metaPtr->size >= size) { // LOL I MIGHT NOT NEED THIS
-            //     metaPtr->inUse = 1;
-            //     resultPtr = (void*) (metaPtr + 1);
-            //     return resultPtr;
-            // }
         }
         metaPtr = metaPtr->next;
     }
 
     // make new metadata piece
     if(foundSpace) {
-        // new metadata should be at resultPtr + size i think?
         // This is making a new metadata piece if it's at the end and there are no metadatas after it
-        // 
         metadata* newMetaPtr = resultPtr + size;
         short sizeLeft = (myblock + 4095) - (((char*) newMetaPtr) + 15);
         metadata newMeta = {0x0404, 0, sizeLeft, NULL};
         if(isSplit) {
             // WE CAN ASSUME THAT the previous metadata (resultptr - metadatasize) 
             // will not be null in prev->next
-            // i want to do two things here:
+
             // change sizeLeft so that it is the distance between the result pointer and 
             // make newMeta->next point to the next metadata
             newMeta.next = nextPtr;
             newMeta.size = (((void*) nextPtr) - ((void*)newMetaPtr) - metadataSize);
-            // can't test this until free works LUL
         }
 
         *newMetaPtr = newMeta;
- //       printf("Made new metadata\n");
     } else {
         fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
         fprintf(stderr, "\tNot enough space to allocate %zu bytes\n", size);
@@ -99,35 +68,30 @@ void* mymalloc(size_t size, char* file, int line) {
 
 }
 
-bool isFirstCall() { // i dont know why i used bitwise operators but i really did not need to
-    unsigned short firstByte = (short) 0 | ((char) myblock[0]);
-    unsigned short secondByte = 0 | myblock[1];
-    unsigned short firstTwoBytes = 0 | firstByte;
-    firstTwoBytes = firstByte | (secondByte << 8);
-    // printf("the first 2bytes make %d\n", firstTwoBytes);
-    return !(firstTwoBytes == 0x0404);
-}
-
+/**
+ * Uses bitwise operators to extract the first two bytes of an address
+ */
 bool isMetadata(void* address) {
     char* addressChar = (char*) address;
     unsigned short firstByte = (short) 0 | (*addressChar);
     unsigned short secondByte = 0 | *(addressChar + 1);
     unsigned short firstTwoBytes = 0 | firstByte;
     firstTwoBytes = firstByte | (secondByte << 8);
-    // printf("the first 2bytes make %d\n", firstTwoBytes);
     return (firstTwoBytes == 0x0404);
 }
 
 // frees a pointer from memory
 void myfree(void* ptr, char* file, int line) {
+    // Case: ptr is out of range of myblock
     if(ptr < ((void*) myblock) || ptr >= ((void*)myblock + 4096)) {
         fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
         fprintf(stderr, "\tCannot free address: %p\n", ptr);
         fprintf(stderr, "\tAddress outside of range for myblock\n");
         return;
     }
-    // need some error checks first
     metadata* metaAddress = ptr - metadataSize; // Stores the address of the metadata for the pointer in metaAddress
+    // Case: ptr provided is within the first meta data block, which is impossible
+    // to allocate memory to
     if((void*)metaAddress < (void*) myblock) {
         fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
         fprintf(stderr, "\tCannot free address: %p\n", ptr);
@@ -135,6 +99,7 @@ void myfree(void* ptr, char* file, int line) {
         return;
     }
     if(isMetadata(metaAddress)) {
+        // Case: Trying to free something that is not in use
         if(!(metaAddress->inUse)) {
             fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
             fprintf(stderr, "\tCannot free address: %p\n", ptr);
@@ -142,6 +107,7 @@ void myfree(void* ptr, char* file, int line) {
             return;
         }
     } else {
+        // Case: Ptr points to something that doesn't have a metadata block associated to it.
         fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
         fprintf(stderr, "\tCannot free address: %p\n", ptr);
         fprintf(stderr, "\tMemory was not allocated\n");
@@ -157,9 +123,8 @@ void resetMetadata(metadata* ptr)
     ptr -> inUse = 0;
 }
 
-/*
- * 
- * I HAVE NOT TESTED THIS
+/**
+ * Collapse iterates through myblock on the metadata. It merges adjacent free memory blocks.
  */
 void collapse() {
     // start at beginning of block of memory
@@ -189,6 +154,9 @@ void collapse() {
     }
 }
 
+/**
+ * This is a helper function for debugging. It displays the contents of each metadata node.
+ */
 void printMeta() {
     metadata* metaPtr = (metadata*) myblock;
     int counter = 0;

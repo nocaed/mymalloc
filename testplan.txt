@@ -1,0 +1,25 @@
+
+Test case E:
+
+    Allocate 2000 bytes. Then allocate 1 byte. Then free the 2000 bytes.
+
+    Allocate 1 byte 50 times. 
+
+    Free all bytes
+
+    The purpose is to test the splitting algorithm. Having 1 byte allocated after the 2000 byte block means that 
+    the following 1 byte allocations will cause a new metadata block to form in between metadata blocks.
+    
+
+Test case F:
+
+    Allocate 1 byte, then 2 bytes, then 3 bytes... until 50 bytes.
+
+    Free every ptr that points to an even number of bytes.
+
+    Then reallocate all even numbers up to 50.
+
+    Then free everything.
+
+    The purpose is to test the first-fit algorithm implemented. The even numbered bytes should reallocate in the same
+    block that they were initially in. 
