@@ -1,5 +1,6 @@
 #include "mymalloc.h"
 #include <stdio.h>
+#include <sys/time.h>
 #include <time.h>
 
 double firstTest();
@@ -9,7 +10,7 @@ double fourthTest();
 double fifthTest();
 double sixthTest();
 int genRandomIntByRange(int upper, int lower);
-double elapsedTimeInMilli(clock_t start, clock_t end);
+double elapsedTimeInMilli(struct timeval* start, struct timeval* end);
 
 const int hundredFifty = 150; // loop counter
 const int fifty = 50; // allocation counter
@@ -39,6 +40,11 @@ int main(int argc, char** argv)
 
     for(i = 0; i < 6; i++)
     {
+        if(i == 4)
+        {
+            break;
+        }
+
         for(j = 0; j < hundred; j++)
         {
             avg += timeArr[i][j];
@@ -57,14 +63,13 @@ int main(int argc, char** argv)
 // Mallocs 1 byte and frees it, 150 times
 double firstTest()
 {
-    clock_t c1;
-    clock_t c2;
+    struct timeval start, end;
 
     int i;
 
     char* ptr;
 
-    c1 = clock();
+    gettimeofday(&start, NULL);
 
     for(i = 0; i < hundredFifty; i++)
     {
@@ -72,16 +77,15 @@ double firstTest()
         free(ptr);
     }
 
-    c2 = clock();
+    gettimeofday(&end, NULL);
 
-    return elapsedTimeInMilli(c1, c2);
+    return elapsedTimeInMilli(&start, &end);
 }
 
 // malloc 1 byte, store the pointer in an array 150 times, once 50 bytes have been allocated, free 50 1 by 1
 double secondTest()
 {
-    clock_t c1;
-    clock_t c2;
+    struct timeval start, end;
 
     int i; // outer loop counter for malloc/free cycle
     int j; // inner loop counter for freeing pointers
@@ -91,7 +95,7 @@ double secondTest()
 
     char* ptrArr[fifty]; // array of pointers
 
-    c1 = clock();
+    gettimeofday(&start, NULL);
     // loops 150 times
     for(i = 0; i < 151; i++)
     {
@@ -120,16 +124,15 @@ double secondTest()
     // at the end of the loop, there's a block of memory allocated, so this frees it
     free(ptrArr[cntr-1]);
 
-    c2 = clock();
+    gettimeofday(&end, NULL);
 
-    return elapsedTimeInMilli(c1, c2);
+    return elapsedTimeInMilli(&start, &end);
 }
 
 // randomly choose between malloc and free
 double thirdTest()
 {
-    clock_t c1;
-    clock_t c2;
+    struct timeval start, end;
 
     int mallocCntr = 0; // holds the number of times that malloc has been called
     int randNum; // holds a randomly generated number
@@ -142,7 +145,7 @@ double thirdTest()
 
     bool fiftyMallocs = false; // condition for loop
 
-    c1 = clock();
+    gettimeofday(&start, NULL);
 
     // seed the random number generator
     srand((unsigned) time(0));
@@ -190,9 +193,9 @@ double thirdTest()
         free(ptrArr[i]);
     }
 
-    c2 = clock();
+    gettimeofday(&end, NULL);
 
-    return elapsedTimeInMilli(c1, c2);
+    return elapsedTimeInMilli(&start, &end);
 }
 
 // generates a random number between lower-upper, inclusive
@@ -206,8 +209,7 @@ int genRandomIntByRange(int lower, int upper)
 // same as C, but with variable byte sizes to allocate
 double fourthTest()
 {
-    clock_t c1;
-    clock_t c2;
+    struct timeval start, end;
 
     const int MEMORY_CAPACITY = 4096; // holds the maximum memory in bytes
 
@@ -229,7 +231,7 @@ double fourthTest()
     
     int mallocSizes[fifty]; // array of sizes of allocated memory blocks
 
-    c1 = clock();
+    gettimeofday(&start, NULL);
 
     // seed the random number generator
     srand((unsigned) time(0));
@@ -300,12 +302,26 @@ double fourthTest()
         free(ptrArr[i]);
     }
 
-    c2 = clock();
+    gettimeofday(&end, NULL);
 
-    return elapsedTimeInMilli(c1, c2);
+    return elapsedTimeInMilli(&start, &end);
 }
 
-double elapsedTimeInMilli(clock_t start, clock_t end)
+// returns the elapsed runtime between two endpoints in milliseconds with double precision
+double elapsedTimeInMilli(struct timeval* start, struct timeval* end)
 {
-    return (((double) (end - start)) / CLOCKS_PER_SEC) * 1000.0;
+    long secs, usecs;
+    double meantime;
+    secs = end -> tv_sec - start -> tv_sec;
+    usecs = end -> tv_usec - start -> tv_usec;
+
+    meantime = ((double)secs * 1000.0 + (double)usecs/1000.0) + 0.5;
+
+    return meantime;
 }
+
+/*
+double fifthCase()
+{
+}
+*/
