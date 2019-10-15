@@ -34,13 +34,13 @@ int main(int argc, char** argv)
         timeArr[1][i] = secondTest();
         timeArr[2][i] = thirdTest();
         timeArr[3][i] = fourthTest();
-        //    timeArr [4][i] = fifthTest();
-        //    timeArr [5][i] = sixthTest();
+        timeArr[4][i] = fifthTest();
+        //    timeArr[5][i] = sixthTest();
     }
 
     for(i = 0; i < 6; i++)
     {
-        if(i == 4)
+        if(i == 5)
         {
             break;
         }
@@ -320,8 +320,64 @@ double elapsedTimeInMilli(struct timeval* start, struct timeval* end)
     return meantime;
 }
 
-/*
-double fifthCase()
+// Demonstrate splitting algorithm
+double fifthTest()
 {
+    struct timeval start, end; // holds start and end times of program
+
+    int i; // used for loop iteration
+
+    void* ptr; // current pointer to allocated memory
+
+    void* ptrArr[51]; // array of pointers to allocated memory
+
+    gettimeofday(&start, NULL); // get start time of program
+
+    // allocate 2000 bytes
+    ptr = malloc(2000);
+    // store pointer to it in array
+    ptrArr[0] = ptr;
+    // allocate 1 byte
+    ptr = malloc(1);
+    // store pointer to it in array
+    ptrArr[1] = ptr;
+
+    // free 2000 bytes
+    free(ptrArr[0]);
+
+    // allocate 1 byte 50 times
+    for(i = 0; i < 50; i++)
+    {
+        ptr = malloc(1);
+
+        if(i == 0)
+        {
+            ptrArr[i] = ptr;
+        }
+        else
+        {
+            ptrArr[i+1] = ptr;
+        }
+    }
+
+    // free all allocated memory
+    for(i = 0; i < 51; i++)
+    {
+        free(ptrArr[i]);
+    }
+
+    // get end time of program
+    gettimeofday(&end, NULL);
+
+    // return the elapsed time in ms
+    return elapsedTimeInMilli(&start, &end);
 }
-*/
+
+// Tests the first fit algorithm
+double sixthTest()
+{
+    struct timeval start, end;
+
+    void* ptr;
+    
+}
