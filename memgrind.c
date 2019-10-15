@@ -35,16 +35,11 @@ int main(int argc, char** argv)
         timeArr[2][i] = thirdTest();
         timeArr[3][i] = fourthTest();
         timeArr[4][i] = fifthTest();
-        //    timeArr[5][i] = sixthTest();
+        timeArr[5][i] = sixthTest();
     }
 
     for(i = 0; i < 6; i++)
     {
-        if(i == 5)
-        {
-            break;
-        }
-
         for(j = 0; j < hundred; j++)
         {
             avg += timeArr[i][j];
@@ -312,6 +307,7 @@ double elapsedTimeInMilli(struct timeval* start, struct timeval* end)
 {
     long secs, usecs;
     double meantime;
+
     secs = end -> tv_sec - start -> tv_sec;
     usecs = end -> tv_usec - start -> tv_usec;
 
@@ -376,8 +372,53 @@ double fifthTest()
 // Tests the first fit algorithm
 double sixthTest()
 {
-    struct timeval start, end;
+    struct timeval start, end; // start and end times
 
-    void* ptr;
-    
+    void* ptr; // curr ptr to malloc
+
+    void* ptrArr[fifty]; // array of pointers
+
+    int i; // loop counter
+
+    gettimeofday(&start, NULL); // start timer
+
+    // allocate (1, 2, 3, ..., 50) bytes and store them in the pointer array
+    for(i = 0; i < fifty; i++)
+    {
+        ptr = malloc(i+1);
+        ptrArr[i] = ptr;
+    }
+
+    // free all pointers to allocated memory of even bytes (2, 4, 6, ..., 50)
+    for(i = 0; i < fifty; i++)
+    {
+        // if the number of bytes is even, free. otherwise, do nothing
+        if((i + 1) % 2 == 0)
+        {
+            free(ptrArr[i]);
+        }
+    }
+
+    // reallocate the previously free bytes
+    for(i = 0; i < fifty; i++)
+    {
+        // if bytes are even, reallocate the memory
+        if((i + 1) % 2 == 0)
+        {
+            ptr = malloc(i+1);
+            ptrArr[i] = ptr;
+        }
+    }
+
+    // free all of the pointers
+    for(i = 0; i < fifty; i++)
+    {
+        free(ptrArr[i]);
+    }
+
+    // end timer
+    gettimeofday(&end, NULL);
+
+    // return elapsed time
+    return elapsedTimeInMilli(&start, &end);
 }
