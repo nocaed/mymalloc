@@ -2,13 +2,14 @@
 #include <stdio.h>
 #include <time.h>
 
-void firstTest();
-void secondTest();
-void thirdTest();
-void fourthTest();
-void fifthTest();
-void sixthTest();
+double firstTest();
+double secondTest();
+double thirdTest();
+double fourthTest();
+double fifthTest();
+double sixthTest();
 int genRandomIntByRange(int upper, int lower);
+double elapsedTimeInMilli(clock_t start, clock_t end);
 
 const int hundredFifty = 150; // loop counter
 const int fifty = 50; // allocation counter
@@ -16,33 +17,72 @@ const int fifty = 50; // allocation counter
 // processes each test case
 int main(int argc, char** argv)
 {
-    firstTest();
-    secondTest();
-    thirdTest();
-    fourthTest();
-//    fifthTest();
-//    sixthTest();
+    int i; // outer loop counter for output
+    int j; // inner loop counter for output
+
+    const int hundred = 100; // number of times that test cases will run
+
+    double timeArr[6][hundred]; // array that holds [amount of test cases][number of times that they will each run]
+
+    double avg = 0.0; // holds the average run time of each case
+
+    // run each test case 100 times and store the run time of each in the array
+    for(i = 0; i < hundred; i++)
+    {
+        timeArr[0][i] = firstTest();
+        timeArr[1][i] = secondTest();
+        timeArr[2][i] = thirdTest();
+        timeArr[3][i] = fourthTest();
+        //    timeArr [4][i] = fifthTest();
+        //    timeArr [5][i] = sixthTest();
+    }
+
+    for(i = 0; i < 6; i++)
+    {
+        for(j = 0; j < hundred; j++)
+        {
+            avg += timeArr[i][j];
+        }
+
+        avg /= hundred;
+
+        printf("The mean runtime for test case %d was %f ms.\n", i, avg);
+
+        avg = 0.0;
+    }
 
     return 0;
 }
 
 // Mallocs 1 byte and frees it, 150 times
-void firstTest()
+double firstTest()
 {
+    clock_t c1;
+    clock_t c2;
+
     int i;
 
     char* ptr;
+
+    c1 = clock();
 
     for(i = 0; i < hundredFifty; i++)
     {
         ptr = (char*)malloc(1);
         free(ptr);
     }
+
+    c2 = clock();
+
+    return elapsedTimeInMilli(c1, c2);
 }
 
 // malloc 1 byte, store the pointer in an array 150 times, once 50 bytes have been allocated, free 50 1 by 1
-void secondTest()
+double secondTest()
 {
+    clock_t c1;
+    clock_t c2;
+
     int i; // outer loop counter for malloc/free cycle
     int j; // inner loop counter for freeing pointers
     int cntr = 0; // counts number of bytes allocated
@@ -51,6 +91,7 @@ void secondTest()
 
     char* ptrArr[fifty]; // array of pointers
 
+    c1 = clock();
     // loops 150 times
     for(i = 0; i < 151; i++)
     {
@@ -78,13 +119,17 @@ void secondTest()
 
     // at the end of the loop, there's a block of memory allocated, so this frees it
     free(ptrArr[cntr-1]);
+
+    c2 = clock();
+
+    return elapsedTimeInMilli(c1, c2);
 }
 
 // randomly choose between malloc and free
-void thirdTest()
+double thirdTest()
 {
-    // seed the random number generator
-    srand((unsigned) time(0));
+    clock_t c1;
+    clock_t c2;
 
     int mallocCntr = 0; // holds the number of times that malloc has been called
     int randNum; // holds a randomly generated number
@@ -96,6 +141,11 @@ void thirdTest()
     char* ptrArr[50]; // contains pointers to malloc'd memory
 
     bool fiftyMallocs = false; // condition for loop
+
+    c1 = clock();
+
+    // seed the random number generator
+    srand((unsigned) time(0));
 
     // while there haven't been 50 mallocs...
     while(fiftyMallocs == false)
@@ -139,6 +189,10 @@ void thirdTest()
     {
         free(ptrArr[i]);
     }
+
+    c2 = clock();
+
+    return elapsedTimeInMilli(c1, c2);
 }
 
 // generates a random number between lower-upper, inclusive
@@ -150,10 +204,10 @@ int genRandomIntByRange(int lower, int upper)
 }
 
 // same as C, but with variable byte sizes to allocate
-void fourthTest()
+double fourthTest()
 {
-    // seed the random number generator
-    srand((unsigned) time(0));
+    clock_t c1;
+    clock_t c2;
 
     const int MEMORY_CAPACITY = 4096; // holds the maximum memory in bytes
 
@@ -175,6 +229,10 @@ void fourthTest()
     
     int mallocSizes[fifty]; // array of sizes of allocated memory blocks
 
+    c1 = clock();
+
+    // seed the random number generator
+    srand((unsigned) time(0));
     // while malloc has not been called fifty times
     while(fiftyMallocs == false)
     {
@@ -241,4 +299,13 @@ void fourthTest()
     {
         free(ptrArr[i]);
     }
+
+    c2 = clock();
+
+    return elapsedTimeInMilli(c1, c2);
+}
+
+double elapsedTimeInMilli(clock_t start, clock_t end)
+{
+    return (((double) (end - start)) / CLOCKS_PER_SEC) * 1000.0;
 }
