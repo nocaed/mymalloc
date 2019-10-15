@@ -52,7 +52,7 @@ void secondTest()
     char* ptrArr[fifty]; // array of pointers
 
     // loops 150 times
-    for(i = 0; i < hundredFifty; i++)
+    for(i = 0; i < 151; i++)
     {
         // if there have been fifty allocations...
         if(cntr == fifty)
