@@ -23,35 +23,18 @@
 // This main method is just for testing purposes, the final product should not have it
 const short metadataSize = sizeof(metadata); // holds the size of metadata
 static char myblock[4096];
-int main(int argc, char** argv) {
-    char* ptr1 = malloc(2);
-    printMeta();
-    char* ptr2 = malloc(4062);
-    printMeta();
-    free(ptr1);
-    printMeta();
-    ptr1 = malloc(2);
-    free(ptr1);
-    printMeta();
-
-}
 
 void* mymalloc(size_t size, char* file, int line) {
     
     if(!isMetadata(myblock)) { 
-        printf("it's the first call\n");
         metadata firstMetadata = {0x0404, 0, 4080, NULL}; // 0x0404 is just the code i chose to verify it.
         metadata* ptrFirstMetadata = (metadata*) myblock;
         *ptrFirstMetadata = firstMetadata; // setting first blocks to the meta data block
-
-    } else {
-        printf("it's been called before\n"); // debugging message
     }
     metadata* metaPtr = (metadata*) myblock; // start it at the first meta data block
     void* resultPtr = NULL; // the pointer we will return at the end of the function
     bool foundSpace = false; // did we find enough space for the user? This boolean shows it.
     bool isSplit = false; // will be true if the allocation causes a split between metadatas
-    int distanceBtwnMetas;
     metadata* nextPtr;
     while(!foundSpace && metaPtr != NULL) { // we end if we either reach the end of the block or find enough memory
         if(!(metaPtr->inUse)) {
@@ -109,7 +92,7 @@ void* mymalloc(size_t size, char* file, int line) {
  //       printf("Made new metadata\n");
     } else {
         fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
-        fprintf(stderr, "\tNot enough space to allocate %d bytes\n", size);
+        fprintf(stderr, "\tNot enough space to allocate %zu bytes\n", size);
         
     }
     return resultPtr;

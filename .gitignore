@@ -1,3 +1,5 @@
 TODO
 a.out
 testcases
+memgrind
+mymalloc.o

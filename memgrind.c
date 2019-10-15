@@ -20,8 +20,8 @@ int main(int argc, char** argv)
     secondTest();
     thirdTest();
     fourthTest();
-    fifthTest();
-    sixthTest();
+//    fifthTest();
+//    sixthTest();
 
     return 0;
 }
