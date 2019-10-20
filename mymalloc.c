@@ -1,7 +1,14 @@
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "mymalloc.h"
+
 
 const short metadataSize = sizeof(metadata); // holds the size of metadata
 static char myblock[4096];
+char* lastAddress = myblock + 4096;
+
+
 /**
  * Allocates memory in myblock, if there is room. If there is enough room to create
  * a new metadata block, it creates one.
@@ -9,7 +16,7 @@ static char myblock[4096];
 void* mymalloc(size_t size, char* file, int line) {
     
     if(!isMetadata(myblock)) { 
-        metadata firstMetadata = {0x0404, 0, 4080, NULL}; // 0x0404 is just the code i chose to verify it.
+        metadata firstMetadata = {0x0404, 0, 4092}; // 0x0404 is just the code i chose to verify it.
         metadata* ptrFirstMetadata = (metadata*) myblock;
         *ptrFirstMetadata = firstMetadata; // setting first blocks to the meta data block
     }
@@ -18,20 +25,21 @@ void* mymalloc(size_t size, char* file, int line) {
     bool foundSpace = false; // did we find enough space for the user? This boolean shows it.
     bool isSplit = false; // will be true if the allocation causes a split between metadatas
     metadata* nextPtr;
-    while(!foundSpace && metaPtr != NULL) { // we end if we either reach the end of the block or find enough memory
+    while(!foundSpace && (char*) metaPtr < lastAddress - metadataSize - 1) { // we end if we either reach the end of the block or find enough memory
+        resultPtr = (void*) (metaPtr + 1);
         if(!(metaPtr->inUse)) {
 
-            if(metaPtr->size >= size + metadataSize) { // if the metadata shows space that is big enough for the size
+            if(metaPtr->size >= size + metadataSize + 1) { // if the metadata shows space that is big enough for the size
                                                             // and what the user allocated...
-                if(metaPtr->next != NULL) { // if this is not the last metadata block
+                if(metaPtr->size + metadataSize + ((char*) metaPtr) < lastAddress - metadataSize - 1) { // if this is not the last metadata block
                     // if it's not null then we gotta do some shit
                     isSplit = true;
-                    nextPtr = metaPtr->next;
+                    nextPtr = (metadata*) (metaPtr->size + metadataSize + ((char*) metaPtr));
                 }
                 resultPtr = (void*) (metaPtr + 1);
                 foundSpace = true;
                 metaPtr->size = size;
-                metaPtr->next = resultPtr + size;
+//                metaPtr->next = resultPtr + size;
                 metaPtr->inUse = 1;
             } else if(metaPtr->size >= size) { // if you can't make a new metadata, just flip the inUse and return
                 metaPtr->inUse = 1;
@@ -39,22 +47,22 @@ void* mymalloc(size_t size, char* file, int line) {
                 return resultPtr;
             }
         }
-        metaPtr = metaPtr->next;
+        metaPtr = resultPtr + metaPtr->size;
     }
 
     // make new metadata piece
     if(foundSpace) {
         // This is making a new metadata piece if it's at the end and there are no metadatas after it
         metadata* newMetaPtr = resultPtr + size;
-        short sizeLeft = (myblock + 4095) - (((char*) newMetaPtr) + 15);
-        metadata newMeta = {0x0404, 0, sizeLeft, NULL};
+        short sizeLeft = (myblock + 4095) - (((char*) newMetaPtr) + (metadataSize - 1));
+        metadata newMeta = {0x0404, 0, sizeLeft};
         if(isSplit) {
             // WE CAN ASSUME THAT the previous metadata (resultptr - metadatasize) 
             // will not be null in prev->next
 
             // change sizeLeft so that it is the distance between the result pointer and 
             // make newMeta->next point to the next metadata
-            newMeta.next = nextPtr;
+ //           newMeta.next = nextPtr;
             newMeta.size = (((void*) nextPtr) - ((void*)newMetaPtr) - metadataSize);
         }
 
@@ -130,11 +138,11 @@ void collapse() {
     // start at beginning of block of memory
     metadata* metaPtr = (metadata*) myblock;
 
-    while(metaPtr != NULL) {
-        if(metaPtr->next == NULL) { // if we're at the end, stop
+    while((char*) metaPtr < lastAddress - metadataSize - 1) {
+        if(metaPtr->size + ((char*) metaPtr) + metadataSize == lastAddress) { // if we're at the end, stop
             break;
         }
-        metadata* nextMetaPtr = metaPtr->next;
+        metadata* nextMetaPtr = (metadata*) ((char*) metaPtr + metaPtr->size + metadataSize);
 
         if(!(metaPtr->inUse) && !(nextMetaPtr->inUse)) { // if current and next are both not in use
             // then we can merge
@@ -142,14 +150,14 @@ void collapse() {
             // 1. set tag in deleted metadata to 0
             nextMetaPtr->tag = 0;
             // 2. metaptr->next = nextMetaPtr->next
-            metaPtr->next = nextMetaPtr->next;
+//            metaPtr->next = nextMetaPtr->next;
             // 3. metaptr->size is now the old size + nextMetaPtr->size + metadataSize
             metaPtr->size = metaPtr->size + nextMetaPtr->size + metadataSize;
             continue;
 
         }
         // advance metadata ptr
-        metaPtr = metaPtr->next;
+        metaPtr = (metadata*)((char*) metaPtr + metaPtr->size + metadataSize);
 
     }
 }
@@ -158,10 +166,11 @@ void collapse() {
  * This is a helper function for debugging. It displays the contents of each metadata node.
  */
 void printMeta() {
+    printf("Last address: %p\n", lastAddress);
     metadata* metaPtr = (metadata*) myblock;
     int counter = 0;
     printf("------------------------------------\n");
-    while(metaPtr != NULL) {
+    while((char*)metaPtr + metaPtr->size + metadataSize <= lastAddress) {
         printf("Metadata num: %d at address %p\n", counter, metaPtr);
         printf("In use: ");
         if(metaPtr->inUse) {
@@ -170,10 +179,13 @@ void printMeta() {
             printf("No\n");
         }
         printf("Size: %d\n", metaPtr->size);
-        printf("Next: %p\n", metaPtr->next);
+        printf("Next: %p\n", (char*) metaPtr + metaPtr->size + metadataSize);
         printf("------------------------------------\n");
-        metaPtr = metaPtr->next;
+        metaPtr = (metadata*) (((char*) metaPtr) + metaPtr->size + metadataSize);
         counter++;
+        // if((char*)metaPtr + metaPtr->size + metadataSize == lastAddress) {
+        //     break;
+        // }
     }
     printf("\n\n");
 }

@@ -311,7 +311,7 @@ double elapsedTimeInMilli(struct timeval* start, struct timeval* end)
     secs = end -> tv_sec - start -> tv_sec;
     usecs = end -> tv_usec - start -> tv_usec;
 
-    meantime = ((double)secs * 1000.0 + (double)usecs/1000.0) + 0.5;
+    meantime = ((double)secs * 1000.0 + (double)usecs/1000.0);
 
     return meantime;
 }
