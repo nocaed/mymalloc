@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 
         avg /= hundred;
 
-        printf("The mean runtime for test case %d was %f ms.\n", i, avg);
+        printf("The mean runtime for workload %c was %f ms.\n", 'A' + i, avg);
 
         avg = 0.0;
     }

@@ -39,7 +39,6 @@ void* mymalloc(size_t size, char* file, int line) {
                 resultPtr = (void*) (metaPtr + 1);
                 foundSpace = true;
                 metaPtr->size = size;
-//                metaPtr->next = resultPtr + size;
                 metaPtr->inUse = 1;
             } else if(metaPtr->size >= size) { // if you can't make a new metadata, just flip the inUse and return
                 metaPtr->inUse = 1;
@@ -57,12 +56,7 @@ void* mymalloc(size_t size, char* file, int line) {
         short sizeLeft = (myblock + 4095) - (((char*) newMetaPtr) + (metadataSize - 1));
         metadata newMeta = {0x0404, 0, sizeLeft};
         if(isSplit) {
-            // WE CAN ASSUME THAT the previous metadata (resultptr - metadatasize) 
-            // will not be null in prev->next
-
             // change sizeLeft so that it is the distance between the result pointer and 
-            // make newMeta->next point to the next metadata
- //           newMeta.next = nextPtr;
             newMeta.size = (((void*) nextPtr) - ((void*)newMetaPtr) - metadataSize);
         }
 
@@ -103,15 +97,20 @@ void myfree(void* ptr, char* file, int line) {
     if((void*)metaAddress < (void*) myblock) {
         fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
         fprintf(stderr, "\tCannot free address: %p\n", ptr);
-        fprintf(stderr, "\tMemory was not allocated\n");
+        fprintf(stderr, "\tMemory was not allocated at this address\n");
         return;
     }
     if(isMetadata(metaAddress)) {
         // Case: Trying to free something that is not in use
-        if(!(metaAddress->inUse)) {
+        if(!(metaAddress->inUse) && (char*)(metaAddress->size + metadataSize + metaAddress) != lastAddress) {
             fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
             fprintf(stderr, "\tCannot free address: %p\n", ptr);
-            fprintf(stderr, "\tMemory was not allocated\n");
+            fprintf(stderr, "\tPointer was already freed\n");
+            return;
+        } else if(!(metaAddress->inUse)) {
+            fprintf(stderr, "\tError in file: %s at line: %d\n", file, line);
+            fprintf(stderr, "\tCannot free address: %p\n", ptr);
+            fprintf(stderr, "\tMemory was not allocated at this address\n");
             return;
         }
     } else {
